@@ -1,0 +1,71 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: fetch-scanner-v2-data
+spec:
+  description: Downloads blobs from definitions.stackrox.io GCloud bucket to be included in Scanner container builds.
+  params:
+  - name: BLOBS_TO_FETCH
+    description: |
+      List of scanner-data file names to fetch to include in the container build.
+      An empty list is allowed which results in no-op.
+    type: array
+  - name: TARGET_DIR
+    description: Target directory relative to workspace where to save downloaded blobs.
+    type: string
+  - name: SOURCE_ARTIFACT
+    description: The Trusted Artifact URI pointing to the artifact with
+      the application source code. This should be the result of the git-clone task,
+      results from other tasks might fail as dirty.
+    type: string
+  - name: ociStorage
+    description: The OCI repository where the Trusted Artifacts are stored.
+    type: string
+  - name: ociArtifactExpiresAfter
+    description: Expiration date for the trusted artifacts created in the
+      OCI repository.
+    type: string
+  results:
+  - name: SOURCE_ARTIFACT
+    description: The Trusted Artifact URI pointing to the artifact with the application source code
+      and additional smuggled activation key.
+    type: string
+  volumes:
+  - name: workdir
+    emptyDir: { }
+  stepTemplate:
+    volumeMounts:
+    - mountPath: /var/workdir
+      name: workdir
+  steps:
+  - name: use-trusted-artifact
+    image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:52f1391e6f1c472fd10bb838f64fae2ed3320c636f536014978a5ddbdfc6b3af
+    args:
+    - use
+    - $(params.SOURCE_ARTIFACT)=/var/workdir/source
+  - name: fetch-scanner-data
+    image: registry.access.redhat.com/ubi9:latest@sha256:1057dab827c782abcfb9bda0c3900c0966b5066e671d54976a7bcb3a2d1a5e53
+    # The only functioning way to pass array parameter that I found is through args array.
+    # Array params have weird limitations, see https://github.com/tektoncd/pipeline/blob/main/docs/tasks.md#substituting-array-parameters
+    # Attempts to pass this in other places result in webhook errors and pipeline not starting.
+    args: [ "$(params.BLOBS_TO_FETCH[*])" ]
+    workingDir: /var/workdir/source
+    script: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      dnf -y upgrade --nobest
+      dnf -y install git
+      .konflux/scripts/fetch-scanner-data.sh "$(params.TARGET_DIR)" "$@"
+    # Blobs for tagged builds are built on GHA in https://github.com/stackrox/scanner.
+    # If the task times out, look there to debug.
+    timeout: 1h30m
+  - name: create-trusted-artifact
+    image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:52f1391e6f1c472fd10bb838f64fae2ed3320c636f536014978a5ddbdfc6b3af
+    args:
+    - create
+    - --store
+    - $(params.ociStorage)
+    - $(results.SOURCE_ARTIFACT.path)=/var/workdir/source
+    env:
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.ociArtifactExpiresAfter)

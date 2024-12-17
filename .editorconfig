@@ -1,0 +1,11 @@
+# This is top-most EditorConfig file for this repo.
+root = true
+
+# Unix-style newlines with a newline ending every file.
+[*]
+end_of_line = lf
+insert_final_newline = true
+
+[{*.yaml,*.yml}]
+# ij_ settings meaning can be looked up at https://www.jetbrains.com/help/idea/code-style-yaml.html
+ij_yaml_indent_sequence_value = false
