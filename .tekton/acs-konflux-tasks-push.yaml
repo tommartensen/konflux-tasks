@@ -538,13 +538,17 @@ spec:
       params:
       - name: BUNDLE_REF
         value: $(tasks.get-bundle-info.results.BUNDLE_REF)
-      - name: TRUST_IMAGE
-        value: $(params.output-trust-data-repo):$(tasks.get-floating-tag.results.FLOATING_TAG)
+      - name: TRUST_IMAGE_REPO
+        value: $(params.output-trust-data-repo)
+      - name: TRUST_IMAGE_TAG
+        value: $(tasks.get-floating-tag.results.FLOATING_TAG)
       taskSpec:
         params:
         - name: BUNDLE_REF
           type: string
-        - name: TRUST_IMAGE
+        - name: TRUST_IMAGE_REPO
+          type: string
+        - name: TRUST_IMAGE_TAG
           type: string
         steps:
         - name: update-tasks-trust
@@ -553,8 +557,48 @@ spec:
             #!/usr/bin/env bash
             set -euo pipefail
 
-            ec --debug track bundle --freshen \
-              --bundle "$(params.BUNDLE_REF)" \
-              --input "oci:$(params.TRUST_IMAGE)" --replace
+            trust_image_tag="$(params.TRUST_IMAGE_TAG)"
 
-            echo "Done"
+            trust_image_repo="$(params.TRUST_IMAGE_REPO)"
+            trust_image_repo_no_quay_io="${trust_image_repo#quay.io}"
+
+            trust_image_ref="${trust_image_repo}:${trust_image_tag}"
+
+            trust_image_remote_tag_name="$( curl --silent --show-error --fail --location \
+                --retry 5 --retry-all-errors --max-time 60 \
+                --get --data-urlencode "specificTag=${trust_image_tag}" \
+                "https://quay.io/api/v1/repository/${trust_image_repo_no_quay_io}/tag/" | \
+              jq -r ".tags[0].name" )"
+
+            # The `ec track bundle` command isn't designed in a friendly way for us, unfortunately.
+            #
+            # Its `--input` argument (combined with `--replace`) is what we need most of times. Despite its name, it not
+            # only loads existing trust info from the provided location, it also pushes the updated info to that same
+            # location. When we use `--input`, the trust data accumulates (which is what we need).
+            # However, the command with `--input` fails when the tag we want to push to doesn't exist. If it did not
+            # fail but push an image in this case, that would be the only necessary command.
+            # The error looks like this:
+            #  Error: GET https://quay.io/v2/rhacs-eng/konflux-tasks-trust/manifests/pr-7: MANIFEST_UNKNOWN: manifest unknown; map[]
+            #
+            # There is the `--output` argument which unlike `--input` does not fail when the image does not exist but
+            # creates it. The issue with `--output` is that it overwrites any existing trust data with just one bundle.
+            # Therefore, `--output` should only be used when the trust image does not yet exist.
+            #
+            # The logic here is to check whether the trust image already exists under the specified floating tag and
+            # use `--input` when it does, otherwise use `--output`. Unfortunately, this is check-then-act and prone to
+            # races but hopefully races between the first pipeline runs aren't common and issues shouldn't appear after
+            # that.
+            #
+            if [[ "${trust_image_remote_tag_name}" != "null" ]]; then
+              echo ">>> ${trust_image_ref} exists and will be updated"
+              ec --debug track bundle --freshen \
+                --bundle "$(params.BUNDLE_REF)" \
+                --input "oci:${trust_image_ref}" --replace
+            else
+              echo ">>> ${trust_image_ref} does not exist and will be pushed"
+              ec --debug track bundle --freshen \
+                --bundle "$(params.BUNDLE_REF)" \
+                --output "oci:${trust_image_ref}"
+            fi
+
+            echo ">>> Done"
