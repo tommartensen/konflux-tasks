@@ -53,7 +53,6 @@ spec:
     script: |
       #!/usr/bin/env bash
       set -euo pipefail
-      dnf -y upgrade --nobest
       dnf -y install git
       .konflux/scripts/fetch-scanner-data.sh "$(params.TARGET_DIR)" "$@"
     # Blobs for tagged builds are built on GHA in https://github.com/stackrox/scanner.
