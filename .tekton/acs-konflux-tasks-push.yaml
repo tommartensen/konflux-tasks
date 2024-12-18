@@ -233,6 +233,7 @@ spec:
         value: $(params.path-context)
       - name: SOURCE_ARTIFACT
         value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+      retries: 3 # To aid sporadic failures between tkn CLI and Quay.
       taskRef:
         params:
         - name: name
