@@ -10,7 +10,7 @@ metadata:
     # The on-push filter includes konflux/* branches which are created by Mintmaker so that CI runs for commits pushed
     # onto these branches even without PRs and so that Mintmaker/Renovate can automerge its updates without PRs.
     pipelinesascode.tekton.dev/on-cel-expression: |
-      (event == "push" && target_branch.matches("^(master|konflux/references/main|konflux/mintmaker/.*)$")) ||
+      (event == "push" && target_branch.matches("^(main|konflux/references/main|konflux/mintmaker/.*)$")) ||
       (event == "pull_request")
   creationTimestamp: null
   labels:
