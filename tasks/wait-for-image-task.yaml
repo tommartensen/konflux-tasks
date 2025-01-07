@@ -11,6 +11,10 @@ spec:
   results:
   - name: IMAGE_DIGEST
     description: Image digest in the format `sha256:abcdef0123`.
+  - name: GIT_REF
+    description: Git commit for the image's source code from `vcs-ref` image label.
+  - name: GIT_REPO
+    description: Git repository URL for the image's source code from `source-location` image label.
   steps:
   - name: wait-for-image
     image: registry.access.redhat.com/ubi9/skopeo@sha256:cacf073d11823480382ca1c60770639dc477f85b7010cf78b374dadad1962de2
@@ -29,9 +33,19 @@ spec:
 
       echo "Image $(params.IMAGE) found."
 
-      digest="$(skopeo inspect \
+      raw_info="$(skopeo inspect \
         --retry-times 10 \
-        --format '{{.Digest}}' \
+        --format '{{.Digest}} {{ index .Labels "vcs-ref" }} {{ index .Labels "source-location" }}' \
         --no-tags \
         "docker://$(params.IMAGE)")"
-      echo -n "$digest" | tee "$(results.IMAGE_DIGEST.path)"
+
+      # Turning raw_info into an array for easier handling.
+      infos=( $raw_info )
+      if [[ "${#infos[@]}" -ne 3 ]]; then
+        echo "ERROR: Not all required information was found. Verify that the 'vcs-ref' and 'source-location' labels are set on the image $(params.IMAGE)."
+        exit 1
+      fi
+
+      echo -n "${infos[0]}" | tee "$(results.IMAGE_DIGEST.path)"
+      echo -n "${infos[1]}" | tee "$(results.GIT_REF.path)"
+      echo -n "${infos[2]}" | tee "$(results.GIT_REPO.path)"
