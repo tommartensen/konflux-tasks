@@ -444,7 +444,7 @@ spec:
           description: Floating tag to apply to the resulting images.
         steps:
         - name: get-floating-tag
-          image: registry.redhat.io/ubi9-micro:latest@sha256:f6e0a71b7e0875b54ea559c2e0a6478703268a8d4b8bdcf5d911d0dae76aef51
+          image: registry.redhat.io/ubi9-minimal:latest@sha256:b87097994ed62fbf1de70bc75debe8dacf3ea6e00dd577d74503ef66452c59d6
           env:
           - name: EVENT_TYPE
             value: '{{event_type}}'
@@ -459,8 +459,8 @@ spec:
             if [[ "${EVENT_TYPE}" == "pull_request" ]]; then
               floating_tag="pr-${PULL_REQUEST_NUMBER}"
             else
-              floating_tag="${SOURCE_BRANCH}"
-              if [[ "${floating_tag}" == "main" ]]; then
+              floating_tag="$(echo "${SOURCE_BRANCH}" | sed 's/[^a-zA-Z0-9_.]/-/g')"
+              if [[ "${SOURCE_BRANCH}" == "main" ]]; then
                 floating_tag="latest"
               fi
             fi
