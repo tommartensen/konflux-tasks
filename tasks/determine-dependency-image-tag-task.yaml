@@ -1,0 +1,62 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: determine-dependency-image-tag
+spec:
+  description: Determines the original tags of Scanner V2 or Collector images using 'make scanner-tag' or
+    'make collector-tag' output.
+  params:
+  - name: TAG_SUFFIX
+    description: Suffix to append to generated image tag.
+    type: string
+  - name: SOURCE_ARTIFACT
+    description: The Trusted Artifact URI pointing to the artifact with the application source code. This should be the
+      result of the git-clone task for the StackRox repo.
+    type: string
+  - name: MAKEFILE_DIRECTORY
+    description: Directory in which to run 'make' command.
+    type: string
+    default: "."
+  - name: MAKEFILE_TARGET
+    description: Makefile target to run.
+    type: string
+  results:
+  - name: IMAGE_TAG
+    description: Image Tag determined by the custom logic.
+  volumes:
+  - name: workdir
+    emptyDir: { }
+  stepTemplate:
+    volumeMounts:
+    - mountPath: /var/workdir
+      name: workdir
+  steps:
+  - name: use-trusted-artifact
+    image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:ff35e09ff5c89e54538b50abae241a765b2b7868f05d62c4835bebf0978f3659
+    args:
+    - use
+    - $(params.SOURCE_ARTIFACT)=/var/workdir/source
+  - name: determine-image-tag
+    image: registry.access.redhat.com/ubi9:latest@sha256:1057dab827c782abcfb9bda0c3900c0966b5066e671d54976a7bcb3a2d1a5e53
+    workingDir: /var/workdir/source
+    script: |
+      #!/usr/bin/env bash
+
+      set -euo pipefail
+
+      dnf -y install git make
+
+      makefile_target="$(params.MAKEFILE_TARGET)"
+
+      # Basic protection against running an arbitrary target.
+      allowed_targets="collector-tag|scanner-tag"
+      if [[ "|${allowed_targets}|" != *"|${makefile_target}|"* ]]; then
+        >&2 echo "Error: provided MAKEFILE_TARGET ${makefile_target} is not one of the allowed targets ${allowed_targets}"
+        exit 2
+      fi
+
+      image_tag="$(make -C "$(params.MAKEFILE_DIRECTORY)" --quiet --no-print-directory "${makefile_target}")"
+
+      # Note that Collector and Scanner V2 images built with Konflux even for release will have the tag suffix. I.e. the
+      # suffix isn't planned to be suppressed there in release _builds_ at the time of this writing.
+      echo -n "${image_tag}$(params.TAG_SUFFIX)" | tee "$(results.IMAGE_TAG.path)"
