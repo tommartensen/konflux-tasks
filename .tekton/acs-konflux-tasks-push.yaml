@@ -2,7 +2,7 @@ apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   annotations:
-    build.appstudio.openshift.io/repo: https://github.com/stackrox/konflux-tasks?rev={{revision}}
+    build.appstudio.openshift.io/repo: https://github.com/tommartensen/konflux-tasks?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
@@ -14,11 +14,11 @@ metadata:
       (event == "pull_request")
   creationTimestamp: null
   labels:
-    appstudio.openshift.io/application: acs-konflux-tasks
-    appstudio.openshift.io/component: acs-konflux-tasks
+    appstudio.openshift.io/application: konflux-tasks
+    appstudio.openshift.io/component: konflux-tasks
     pipelines.appstudio.openshift.io/type: build
-  name: acs-konflux-tasks-on-push
-  namespace: rh-acs-tenant
+  name: konflux-tasks-on-push
+  namespace: rh-ee-tmartens-tenant
 
 spec:
 
@@ -29,11 +29,11 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/konflux-tasks
+    value: quay.io/redhat-user-workloads/rh-ee-tmartens-tenant/konflux-tasks
   - name: output-image-tag
     value: rev-{{revision}}
   - name: output-trust-data-repo
-    value: quay.io/rhacs-eng/konflux-tasks-trust
+    value: quay.io/redhat-user-workloads/rh-ee-tmartens-tenant/konflux-tasks
   - name: rebuild
     value: "true"
   - name: build-source-image
