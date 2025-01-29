@@ -49,4 +49,5 @@
   "enabledManagers": [
     "tekton",
   ],
+  "platformAutomerge": true
 }
