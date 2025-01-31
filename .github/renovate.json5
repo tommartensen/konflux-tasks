@@ -15,6 +15,7 @@
     "github>konflux-ci/mintmaker//config/renovate/renovate.json",
     // This tells Renovate to combine all updates in one PR so that we have less PRs to deal with.
     "group:all",
+    ":dependencyDashboard",
   ],
   "timezone": "Etc/UTC",
   "schedule": [
