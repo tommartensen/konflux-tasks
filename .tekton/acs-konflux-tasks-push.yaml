@@ -342,22 +342,13 @@ spec:
     - name: sast-coverity-check
       params:
       - name: IMAGE
-        value: $(params.output-image)
-      - name: DOCKERFILE
-        value: $(params.dockerfile)
+        value: $(params.output-image-repo):$(params.output-image-tag)
       - name: CONTEXT
         value: $(params.path-context)
-      - name: HERMETIC
-        value: $(params.hermetic)
       - name: PREFETCH_INPUT
         value: $(params.prefetch-input)
-      - name: IMAGE_EXPIRES_AFTER
-        value: $(params.image-expires-after)
       - name: COMMIT_SHA
         value: $(tasks.clone-repository.results.commit)
-      - name: BUILD_ARGS
-        value:
-        - $(params.build-args[*])
       - name: SOURCE_ARTIFACT
         value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
       - name: CACHI2_ARTIFACT
