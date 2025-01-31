@@ -50,4 +50,5 @@
     "tekton",
   ],
   "labels": ["auto-merge"],
+  "platformAutomerge": true
 }
