@@ -341,8 +341,10 @@ spec:
 
     - name: sast-coverity-check
       params:
+      - name: image-url
+        value: $(tasks.build-container.results.IMAGE_URL)
       - name: IMAGE
-        value: $(params.output-image-repo):$(params.output-image-tag)
+        value: $(tasks.build-container.results.IMAGE_URL)
       - name: CONTEXT
         value: $(params.path-context)
       - name: PREFETCH_INPUT
