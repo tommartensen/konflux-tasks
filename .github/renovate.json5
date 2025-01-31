@@ -49,4 +49,5 @@
   "enabledManagers": [
     "tekton",
   ],
+  "labels": ["auto-merge"],
 }
