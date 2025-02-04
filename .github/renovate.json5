@@ -48,6 +48,7 @@
   },
   "enabledManagers": [
     "tekton",
+    "docker",
   ],
   "labels": ["auto-merge"],
   "platformAutomerge": true
