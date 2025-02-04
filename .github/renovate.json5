@@ -15,7 +15,6 @@
     "github>konflux-ci/mintmaker//config/renovate/renovate.json",
     // This tells Renovate to combine all updates in one PR so that we have less PRs to deal with.
     "group:all",
-    ":dependencyDashboard",
   ],
   "timezone": "Etc/UTC",
   "schedule": [
@@ -44,7 +43,7 @@
     "automerge": true,
     // PRs can't be actually automerged because we require approval from CODEOWNERS which Renovate can't bypass,
     // therefore we set automerge type to branch.
-    "automergeType": "branch",
+    "automergeType": "pr",
     "automergeStrategy": "squash",
   },
   "enabledManagers": [
