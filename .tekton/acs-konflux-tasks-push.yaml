@@ -446,7 +446,7 @@ spec:
           description: Floating tag to apply to the resulting images.
         steps:
         - name: get-floating-tag
-          image: registry.redhat.io/ubi9-minimal:latest@sha256:3902bab19972cd054fd08b2a4e08612ae7e68861ee5d9a5cf22d828f27e2f479
+          image: registry.redhat.io/ubi9-minimal:latest@sha256:66b99214cb9733e77c4a12cc3e3cbbe76769a213f4e2767f170a4f0fdf9db490
           env:
           - name: EVENT_TYPE
             value: '{{event_type}}'
@@ -522,7 +522,7 @@ spec:
         - name: BUNDLE_CONTENTS
         steps:
         - name: get-bundle-info
-          image: quay.io/konflux-ci/appstudio-utils:latest@sha256:54e31d1125f8d8dde6a99e3c90dab5e4c4367a16c219d17e27adfe684a220eaf
+          image: quay.io/konflux-ci/appstudio-utils:latest@sha256:fe39bcb6046c1b50b4837e98a3ffca7e3b68ebb56e0e8d44bf26c76aba762fde
           script: |
             #!/usr/bin/env bash
             set -euo pipefail
@@ -557,7 +557,7 @@ spec:
           type: string
         steps:
         - name: update-tasks-trust
-          image: quay.io/konflux-ci/appstudio-utils:latest@sha256:54e31d1125f8d8dde6a99e3c90dab5e4c4367a16c219d17e27adfe684a220eaf
+          image: quay.io/konflux-ci/appstudio-utils:latest@sha256:fe39bcb6046c1b50b4837e98a3ffca7e3b68ebb56e0e8d44bf26c76aba762fde
           script: |
             #!/usr/bin/env bash
             set -euo pipefail
